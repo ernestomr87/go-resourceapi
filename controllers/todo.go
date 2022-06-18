@@ -2,23 +2,21 @@ package controllers
 
 import (
 	"errors"
-	"github.com/ernestomr87/go-resourceapi/database"
+	"fmt"
 	"github.com/ernestomr87/go-resourceapi/models"
-	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
-//	Dependency Injection
 type TodoRepo struct {
 	Db *gorm.DB
 }
 
-func New() *TodoRepo {
-	db := database.InitDB()
+func NewTodoController(db *gorm.DB) *TodoRepo {
 	db.AutoMigrate(&models.Todo{})
-
 	return &TodoRepo{Db: db}
 }
 
@@ -32,21 +30,21 @@ func (repository *TodoRepo) CreateTodo(c *gin.Context) {
 		}
 		c.JSON(http.StatusOK, todo)
 	} else {
+		fmt.Println(todo)
 		c.JSON(http.StatusBadRequest, todo)
 	}
 }
 
 func (repository *TodoRepo) GetTodos(c *gin.Context) {
-	var todos []models.Todo
-	err := models.GetTodos(repository.Db, &todos)
+	var todo []models.Todo
+	err := models.GetTodos(repository.Db, &todo)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
-	c.JSON(http.StatusOK, todos)
+	c.JSON(http.StatusOK, todo)
 }
 
-//	http://<server>/todo/2
 func (repository *TodoRepo) GetTodo(c *gin.Context) {
 	id, _ := c.Params.Get("id")
 	idn, _ := strconv.Atoi(id)
@@ -59,15 +57,12 @@ func (repository *TodoRepo) GetTodo(c *gin.Context) {
 			return
 		}
 
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"error": err,
-		})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
 	c.JSON(http.StatusOK, todo)
 }
 
-//	http://<server>/todo/2
 func (repository *TodoRepo) UpdateTodo(c *gin.Context) {
 	var todo models.Todo
 	var updatedTodo models.Todo
@@ -81,9 +76,7 @@ func (repository *TodoRepo) UpdateTodo(c *gin.Context) {
 			return
 		}
 
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"error": err,
-		})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
 	if c.BindJSON(&todo) == nil {
@@ -94,9 +87,7 @@ func (repository *TodoRepo) UpdateTodo(c *gin.Context) {
 
 		err = models.UpdateTodo(repository.Db, &updatedTodo)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-				"error": err,
-			})
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
 			return
 		}
 		c.JSON(http.StatusOK, updatedTodo)
@@ -105,20 +96,15 @@ func (repository *TodoRepo) UpdateTodo(c *gin.Context) {
 	}
 }
 
-//	http://<server>/todo/2
-func (repository *TodoRepo) DeleteTodoById(c *gin.Context) {
+func (repository *TodoRepo) DeleteTodo(c *gin.Context) {
 	var todo models.Todo
 	id, _ := c.Params.Get("id")
 	idn, _ := strconv.Atoi(id)
 
-	err := models.DeleteTodoByID(repository.Db, &todo, idn)
+	err := models.DeleteTodoById(repository.Db, &todo, idn)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"error": err,
-		})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Todo was deleted succesfully!!!",
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "Todo was deleted successfully"})
 }
